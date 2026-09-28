@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <iostream>
 #include <numeric>
 #include <random>
@@ -8,20 +9,23 @@
 
 #include "sorting.h"
 
-using namespace std;
-
 
 // Benchmark configuration
 constexpr int RUNS = 5;
 constexpr unsigned int SEED = 42;
 
-const vector<int> INPUT_SIZES = {
+const std::vector<int> INPUT_SIZES = {
 	1000,
 	10000,
 };
 
+struct BenchmarkTarget {
+	std::string name;
+	sorting::SortFunction function;
+};
+
 struct BenchmarkResult {
-	string algorithm;
+	std::string algorithm;
 	unsigned int seed;
 	int inputSize;
 	int run;
@@ -31,11 +35,11 @@ struct BenchmarkResult {
 
 
 // utilities
-vector<int> generateRandomVector(size_t inputSize, unsigned int seed) {
-	mt19937 rng(seed);
-	uniform_int_distribution<int> dist(0, 1000000);
+std::vector<int> generateRandomVector(std::size_t inputSize, unsigned int seed) {
+	std::mt19937 rng(seed);
+	std::uniform_int_distribution<int> dist(0, 1000000);
 
-	vector<int> v(inputSize);
+	std::vector<int> v(inputSize);
 
 	for (auto& value : v)
 		value = dist(rng);
@@ -45,40 +49,45 @@ vector<int> generateRandomVector(size_t inputSize, unsigned int seed) {
 
 
 int main() {
-	cout << "=== SortCritic Benchmark v0.1 ===\n";
-	cout << "Algorithm: Bubble Sort\n";
-	cout << "Seed: " << SEED << '\n';
-	cout << "Runs: " << RUNS << "\n\n";
+	const BenchmarkTarget target{
+		.name = "Bubble Sort",
+		.function = sorting::bubble
+	};
 
-	vector<BenchmarkResult> results;
+	std::cout << "=== SortCritic Benchmark v0.1 ===\n";
+	std::cout << "Algorithm: " << target.name << '\n';
+	std::cout << "Seed: " << SEED << '\n';
+	std::cout << "Runs: " << RUNS << "\n\n";
+
+	std::vector<BenchmarkResult> results;
 	results.reserve(INPUT_SIZES.size() * RUNS);
 
 	for (int inputSize : INPUT_SIZES) {
-		vector<int> original = generateRandomVector(inputSize, SEED);
+		std::vector<int> original = generateRandomVector(inputSize, SEED);
 
-		vector<int> expected = original;
-		sort(expected.begin(), expected.end());
+		std::vector<int> expected = original;
+		std::sort(expected.begin(), expected.end());
 
-		vector<double> durations;
+		std::vector<double> durations;
 		durations.reserve(RUNS);
 
-		cout << "Input size: " << inputSize << '\n';
+		std::cout << "Input size: " << inputSize << '\n';
 
 		for (int run = 1; run <= RUNS; run++) {
-			vector<int> sorted = original;
+			std::vector<int> sorted = original;
 
-			auto start = chrono::steady_clock::now();
-			sorting::bubble(sorted);
-			auto end = chrono::steady_clock::now();
+			auto start = std::chrono::steady_clock::now();
+			target.function(sorted);
+			auto end = std::chrono::steady_clock::now();
 
 			double duration = 
-				chrono::duration<double, milli>(end - start).count();
+				std::chrono::duration<double, std::milli>(end - start).count();
 			durations.push_back(duration);
 
 			bool success = (expected == sorted);
 
 			BenchmarkResult result{
-				.algorithm = "Bubble Sort",
+				.algorithm = target.name,
 				.seed = SEED,
 				.inputSize = inputSize,
 				.run = run,
@@ -87,11 +96,11 @@ int main() {
 			};
 			results.push_back(result);
 
-			cout << "Run " << run
-				<< ": " << duration << " ms"
-				<< " | "
-				<< (success ? "PASS" : "FAIL")
-				<< '\n';
+			std::cout << "Run " << run
+					  << ": " << duration << " ms"
+					  << " | "
+					  << (success ? "PASS" : "FAIL")
+					  << '\n';
 		}
 
 		double mean =
@@ -104,19 +113,19 @@ int main() {
 		double maxVal = *maxIt;
 
 		double median;
-		vector<double> sortedDurations = durations;
-		sort(sortedDurations.begin(), sortedDurations.end());
-		size_t n_durations = sortedDurations.size();
-		median = (n_durations % 2 == 1 ?
-			      sortedDurations[n_durations / 2] :
-			      (sortedDurations[n_durations / 2 - 1] + sortedDurations[n_durations / 2]) / 2.0
+		std::vector<double> sortedDurations = durations;
+		std::sort(sortedDurations.begin(), sortedDurations.end());
+		std::size_t durationCount = sortedDurations.size();
+		median = (durationCount % 2 == 1 ?
+			      sortedDurations[durationCount / 2] :
+			      (sortedDurations[durationCount / 2 - 1] + sortedDurations[durationCount / 2]) / 2.0
 			);
 
-		cout << "\nMean: " << mean << " ms\n";
-		cout << "Median: " << median << " ms\n";
-		cout << "Min: " << minVal << " ms\n";
-		cout << "Max: " << maxVal << " ms\n";
+		std::cout << "\nMean: " << mean << " ms\n";
+		std::cout << "Median: " << median << " ms\n";
+		std::cout << "Min: " << minVal << " ms\n";
+		std::cout << "Max: " << maxVal << " ms\n";
 
-		cout << '\n';
+		std::cout << '\n';
 	}
 }
