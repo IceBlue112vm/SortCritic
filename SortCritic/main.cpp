@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <numeric>
 #include <random>
 #include <vector>
 
@@ -37,13 +38,6 @@ void printVector(const vector<int>& v) {
 	cout << endl;
 }
 
-bool verifySorted(const vector<int>& original, const vector<int>& sorted) {
-	vector<int> expected = original;
-	sort(expected.begin(), expected.end());
-
-	return expected == sorted;
-}
-
 int main() {
 	cout << "=== SortCritic Benchmark v0.1 ===\n";
 	cout << "Algorithm: Bubble Sort\n";
@@ -52,6 +46,12 @@ int main() {
 
 	for (int N : SIZES) {
 		vector<int> original = generateRandomVector(N, SEED);
+
+		vector<int> expected = original;
+		sort(expected.begin(), expected.end());
+
+		vector<double> durations;
+		durations.reserve(RUNS);
 
 		cout << "N: " << N << '\n';
 
@@ -64,13 +64,39 @@ int main() {
 
 			auto duration =
 				chrono::duration<double, milli>(end - start).count();
+			durations.push_back(duration);
+
+			bool success = (expected == sorted);
 
 			cout << "Run " << run + 1
 				<< ": " << duration << " ms"
 				<< " | "
-				<< (verifySorted(original, sorted) ? "PASS" : "FAIL")
+				<< (success ? "PASS" : "FAIL")
 				<< '\n';
 		}
+
+		double mean =
+			std::accumulate(durations.begin(), durations.end(), 0.0)
+			/ durations.size();
+		
+		auto [minIt, maxIt] =
+			std::minmax_element(durations.begin(), durations.end());
+		double minVal = *minIt;
+		double maxVal = *maxIt;
+
+		double median;
+		vector<double> sortedDurations = durations;
+		sort(sortedDurations.begin(), sortedDurations.end());
+		size_t n_durations = sortedDurations.size();
+		median = (n_durations % 2 == 1 ?
+			      sortedDurations[n_durations / 2] :
+			      (sortedDurations[n_durations / 2 - 1] + sortedDurations[n_durations / 2]) / 2.0
+			);
+
+		cout << "\nMean: " << mean << " ms\n";
+		cout << "Median: " << median << " ms\n";
+		cout << "Min: " << minVal << " ms\n";
+		cout << "Max: " << maxVal << " ms\n";
 
 		cout << '\n';
 	}
