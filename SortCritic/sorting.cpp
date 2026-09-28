@@ -8,3 +8,19 @@ void sorting::bubble(std::vector<int>& v) {
 			if (v[j] > v[j + 1])
 				std::swap(v[j], v[j + 1]);
 }
+
+void sorting::insertion(std::vector<int>& v) {
+	int N = static_cast<int>(v.size());
+
+	for (int i = 1; i < N; i++) {
+		int key = v[i];
+		int j = i - 1;
+
+		while (j >= 0 && key < v[j]) {
+			v[j + 1] = v[j];
+			j--;
+		}
+
+		v[j + 1] = key;
+	}
+}
