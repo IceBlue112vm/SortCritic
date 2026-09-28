@@ -4,6 +4,8 @@
 #include <random>
 #include <vector>
 
+#include "sorting.h"
+
 using namespace std;
 
 vector<int> generateRandomVector(size_t N, unsigned int seed) {
@@ -16,15 +18,6 @@ vector<int> generateRandomVector(size_t N, unsigned int seed) {
 		value = dist(rng);
 
 	return v;
-}
-
-void bubbleSort(vector<int>& v) {
-    int N = static_cast<int>(v.size());
-
-	for (int i = 0; i < N - 1; i++)
-		for (int j = 0; j < N - i - 1; j++)
-			if (v[j] > v[j + 1])
-				swap(v[j], v[j + 1]);
 }
 
 void printVector(const vector<int>& v) {
@@ -42,7 +35,7 @@ bool verifySorted(const vector<int>& original, const vector<int>& sorted) {
 
 int main() {
 	for (int j = 0; j < 3; j++) {
-		for (int i = 10000; i <= 100000; i += 10000) {
+		for (int i = 10000; i <= 10000; i += 10000) {
 			int N = i;
 			unsigned int seed = 42;
 
@@ -50,7 +43,7 @@ int main() {
 			vector<int> sorted = original;
 
 			auto start = chrono::steady_clock::now();
-			bubbleSort(sorted);
+			sorting::bubble(sorted);
 			auto end = chrono::steady_clock::now();
 
 			auto duration = chrono::duration<double, milli>(end - start).count();
