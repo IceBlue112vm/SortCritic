@@ -3,6 +3,7 @@
 #include <iostream>
 #include <numeric>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "sorting.h"
@@ -14,17 +15,27 @@ using namespace std;
 constexpr int RUNS = 5;
 constexpr unsigned int SEED = 42;
 
-const vector<int> SIZES = {
+const vector<int> INPUT_SIZES = {
 	1000,
 	10000,
 };
 
+struct BenchmarkResult {
+	string algorithm;
+	unsigned int seed;
+	int inputSize;
+	int run;
+	double duration;
+	bool success;
+};
 
-vector<int> generateRandomVector(size_t N, unsigned int seed) {
+
+// utilities
+vector<int> generateRandomVector(size_t inputSize, unsigned int seed) {
 	mt19937 rng(seed);
 	uniform_int_distribution<int> dist(0, 1000000);
 
-	vector<int> v(N);
+	vector<int> v(inputSize);
 
 	for (auto& value : v)
 		value = dist(rng);
@@ -32,11 +43,6 @@ vector<int> generateRandomVector(size_t N, unsigned int seed) {
 	return v;
 }
 
-void printVector(const vector<int>& v) {
-	for (size_t i = 0; i < v.size(); i++)
-		cout << v[i] << ' ';
-	cout << endl;
-}
 
 int main() {
 	cout << "=== SortCritic Benchmark v0.1 ===\n";
@@ -44,8 +50,11 @@ int main() {
 	cout << "Seed: " << SEED << '\n';
 	cout << "Runs: " << RUNS << "\n\n";
 
-	for (int N : SIZES) {
-		vector<int> original = generateRandomVector(N, SEED);
+	vector<BenchmarkResult> results;
+	results.reserve(INPUT_SIZES.size() * RUNS);
+
+	for (int inputSize : INPUT_SIZES) {
+		vector<int> original = generateRandomVector(inputSize, SEED);
 
 		vector<int> expected = original;
 		sort(expected.begin(), expected.end());
@@ -53,22 +62,32 @@ int main() {
 		vector<double> durations;
 		durations.reserve(RUNS);
 
-		cout << "N: " << N << '\n';
+		cout << "Input size: " << inputSize << '\n';
 
-		for (int run = 0; run < RUNS; run++) {
+		for (int run = 1; run <= RUNS; run++) {
 			vector<int> sorted = original;
 
 			auto start = chrono::steady_clock::now();
 			sorting::bubble(sorted);
 			auto end = chrono::steady_clock::now();
 
-			auto duration =
+			double duration = 
 				chrono::duration<double, milli>(end - start).count();
 			durations.push_back(duration);
 
 			bool success = (expected == sorted);
 
-			cout << "Run " << run + 1
+			BenchmarkResult result{
+				.algorithm = "Bubble Sort",
+				.seed = SEED,
+				.inputSize = inputSize,
+				.run = run,
+				.duration = duration,
+				.success = success
+			};
+			results.push_back(result);
+
+			cout << "Run " << run
 				<< ": " << duration << " ms"
 				<< " | "
 				<< (success ? "PASS" : "FAIL")
