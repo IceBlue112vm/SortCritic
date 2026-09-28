@@ -8,6 +8,17 @@
 
 using namespace std;
 
+
+// Benchmark configuration
+constexpr int RUNS = 5;
+constexpr unsigned int SEED = 42;
+
+const vector<int> SIZES = {
+	1000,
+	10000,
+};
+
+
 vector<int> generateRandomVector(size_t N, unsigned int seed) {
 	mt19937 rng(seed);
 	uniform_int_distribution<int> dist(0, 1000000);
@@ -34,27 +45,33 @@ bool verifySorted(const vector<int>& original, const vector<int>& sorted) {
 }
 
 int main() {
-	for (int j = 0; j < 3; j++) {
-		for (int i = 10000; i <= 10000; i += 10000) {
-			int N = i;
-			unsigned int seed = 42;
+	cout << "=== SortCritic Benchmark v0.1 ===\n";
+	cout << "Algorithm: Bubble Sort\n";
+	cout << "Seed: " << SEED << '\n';
+	cout << "Runs: " << RUNS << "\n\n";
 
-			vector<int> original = generateRandomVector(N, seed);
+	for (int N : SIZES) {
+		vector<int> original = generateRandomVector(N, SEED);
+
+		cout << "N: " << N << '\n';
+
+		for (int run = 0; run < RUNS; run++) {
 			vector<int> sorted = original;
 
 			auto start = chrono::steady_clock::now();
 			sorting::bubble(sorted);
 			auto end = chrono::steady_clock::now();
 
-			auto duration = chrono::duration<double, milli>(end - start).count();
+			auto duration =
+				chrono::duration<double, milli>(end - start).count();
 
-			cout << "N: " << N << endl;
-			cout << "Seed: " << seed << endl;
-			cout << "Duration: " << duration << " ms" << endl;
-			cout << "Is sorted: "
-				<< boolalpha
-				<< verifySorted(original, sorted)
-				<< endl;
+			cout << "Run " << run + 1
+				<< ": " << duration << " ms"
+				<< " | "
+				<< (verifySorted(original, sorted) ? "PASS" : "FAIL")
+				<< '\n';
 		}
+
+		cout << '\n';
 	}
 }
