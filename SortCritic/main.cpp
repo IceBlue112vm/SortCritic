@@ -17,6 +17,10 @@ constexpr unsigned int SEED = 42;
 const std::vector<int> INPUT_SIZES = {
 	1000,
 	10000,
+	25000,
+	50000,
+	75000,
+	100000,
 };
 
 struct BenchmarkTarget {
@@ -50,8 +54,8 @@ std::vector<int> generateRandomVector(std::size_t inputSize, unsigned int seed) 
 
 int main() {
 	const BenchmarkTarget target{
-		.name = "Bubble Sort",
-		.function = sorting::bubble
+		.name = "Selection Sort",
+		.function = sorting::selection
 	};
 
 	std::cout << "=== SortCritic Benchmark v0.1 ===\n";

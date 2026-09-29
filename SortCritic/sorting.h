@@ -8,4 +8,5 @@ namespace sorting {
 
 	void bubble(std::vector<int>& v);
 	void insertion(std::vector<int>& v);
+	void selection(std::vector<int>& v);
 }

@@ -24,3 +24,17 @@ void sorting::insertion(std::vector<int>& v) {
 		v[j + 1] = key;
 	}
 }
+
+void sorting::selection(std::vector<int>& v) {
+	int N = static_cast<int>(v.size());
+
+	for (int i = 0; i < N - 1; i++) {
+		int minIndex = i;
+
+		for (int j = i + 1; j < N; j++)
+			if (v[j] < v[minIndex])
+				minIndex = j;
+
+		std::swap(v[i], v[minIndex]);
+	}
+}
