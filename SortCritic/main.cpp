@@ -54,8 +54,8 @@ std::vector<int> generateRandomVector(std::size_t inputSize, unsigned int seed) 
 
 int main() {
 	const BenchmarkTarget target{
-		.name = "Merge Sort",
-		.function = sorting::merge
+		.name = "Quick Sort",
+		.function = sorting::quick
 	};
 
 	std::cout << "=== SortCritic Benchmark v0.1 ===\n";

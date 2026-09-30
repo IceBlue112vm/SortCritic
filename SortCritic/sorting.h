@@ -11,4 +11,5 @@ namespace sorting {
 	void insertion(std::vector<int>& v);
 	void selection(std::vector<int>& v);
 	void merge(std::vector<int>& v);
+	void quick(std::vector<int>& v);
 }
