@@ -1,9 +1,14 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <random>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -107,11 +112,14 @@ BenchmarkStatistics calculateStatistics(
 	const std::vector<double>& durations
 ) {
 	double mean =
-		std::accumulate(durations.begin(), durations.end(), 0.0)
+		std::accumulate(
+			durations.begin(),
+			durations.end(),
+			0.0
+		)
 		/ durations.size();
 
-	auto [minIt, maxIt] =
-		std::minmax_element(durations.begin(), durations.end());
+	auto [minIt, maxIt] = std::minmax_element(durations.begin(), durations.end());
 
 	std::vector<double> sortedDurations = durations;
 	std::sort(sortedDurations.begin(), sortedDurations.end());
@@ -121,8 +129,10 @@ BenchmarkStatistics calculateStatistics(
 	double median =
 		(count % 2 == 1)
 		? sortedDurations[count / 2]
-		: (sortedDurations[count / 2 - 1]
-			+ sortedDurations[count / 2]) / 2.0;
+		: (
+			sortedDurations[count / 2 - 1]
+			+ sortedDurations[count / 2]
+		  ) / 2.0;
 
 	return BenchmarkStatistics{
 		.mean = mean,
@@ -133,6 +143,78 @@ BenchmarkStatistics calculateStatistics(
 }
 
 
+std::string createTimestampString() {
+	auto now = std::chrono::system_clock::now();
+
+	std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
+
+	std::tm localTime{};
+	localtime_s(&localTime, &nowTime);
+
+	std::ostringstream oss;
+
+	oss << std::put_time(&localTime, "%Y%m%d_%H%M%S");
+
+	return oss.str();
+}
+
+
+std::filesystem::path createResultFilePath() {
+	const std::filesystem::path resultDirectory = "results";
+
+	std::filesystem::create_directories(resultDirectory);
+
+	return resultDirectory /
+		("benchmark_" + createTimestampString() + ".csv");
+}
+
+
+void saveResultsToCsv(
+	const std::vector<BenchmarkResult>& results,
+	const std::filesystem::path& filePath
+) {
+	std::ofstream file(filePath);
+
+	if (!file.is_open()) {
+		std::cerr
+			<< "Failed to open file: "
+			<< filePath
+			<< '\n';
+
+		return;
+	}
+
+	file
+		<< "algorithm,"
+		<< "distribution,"
+		<< "seed,"
+		<< "inputSize,"
+		<< "run,"
+		<< "durationMs,"
+		<< "success\n";
+
+	file << std::setprecision(10);
+
+	for (const auto& result : results) {
+		file
+			<< result.algorithm << ','
+			<< distributionToString (result.distribution) << ','
+			<< result.seed << ','
+			<< result.inputSize << ','
+			<< result.run << ','
+			<< result.duration << ','
+			<< (result.success ? "true" : "false")
+			<< '\n';
+	}
+
+	std::cout
+		<< "Results saved: "
+		<< filePath
+		<< '\n';
+}
+
+
+// Main
 int main() {
 	const BenchmarkTarget target{
 		.name = "Quick Sort",
@@ -141,13 +223,19 @@ int main() {
 
 	std::cout << "=== SortCritic Benchmark v0.1 ===\n";
 	std::cout << "Algorithm: " << target.name << '\n';
-	std::cout << "Distribution: "
-			  << distributionToString(DISTRIBUTION) << '\n';
+	std::cout
+		<< "Distribution: "
+		<< distributionToString(DISTRIBUTION)
+		<< '\n';
 	std::cout << "Seed: " << SEED << '\n';
 	std::cout << "Runs: " << RUNS << "\n\n";
 
 	std::vector<BenchmarkResult> results;
-	results.reserve(INPUT_SIZES.size() * RUNS);
+
+	results.reserve(
+		INPUT_SIZES.size() * RUNS
+	);
+
 
 	for (std::size_t inputSize : INPUT_SIZES) {
 		std::vector<int> original =
@@ -158,6 +246,7 @@ int main() {
 			);
 
 		std::vector<int> expected = original;
+
 		std::sort(expected.begin(), expected.end());
 
 		std::vector<double> durations;
@@ -165,19 +254,16 @@ int main() {
 
 		std::cout << "Input size: " << inputSize << '\n';
 
+
 		for (int run = 1; run <= RUNS; run++) {
 			std::vector<int> sorted = original;
 
 			auto start = std::chrono::steady_clock::now();
-
 			target.function(sorted);
-
 			auto end = std::chrono::steady_clock::now();
 
-			double duration =
-				std::chrono::duration<double, std::milli>(
-					end - start
-				).count();
+			double duration
+				= std::chrono::duration<double, std::milli>(end - start).count();
 
 			bool success = (expected == sorted);
 
@@ -195,23 +281,26 @@ int main() {
 
 			results.push_back(result);
 
-			std::cout << "Run " << run
-					  << ": " << duration << " ms"
-					  << " | "
-					  << (success ? "PASS" : "FAIL")
-					  << '\n';
+			std::cout << "Run " << run << ": "
+				<< duration << " ms" << " | "
+				<< (success ? "PASS" : "FAIL")
+				<< '\n';
 		}
 
-		BenchmarkStatistics statistics =
-			calculateStatistics(durations);
+		BenchmarkStatistics statistics = calculateStatistics(durations);
 
-		std::cout << "\nMean: "
-				  << statistics.mean << " ms\n";
-		std::cout << "Median: "
-				  << statistics.median << " ms\n";
-		std::cout << "Min: "
-				  << statistics.min << " ms\n";
-		std::cout << "Max: "
-				  << statistics.max << " ms\n\n";
+		std::cout << "\nMean: " << statistics.mean << " ms\n";
+		std::cout << "Median: " << statistics.median << " ms\n";
+		std::cout << "Min: " << statistics.min << " ms\n";
+		std::cout << "Max: " << statistics.max << " ms\n\n";
 	}
+
+
+	std::filesystem::path resultFilePath =
+		createResultFilePath();
+
+	saveResultsToCsv(results, resultFilePath);
+
+
+	return 0;
 }
