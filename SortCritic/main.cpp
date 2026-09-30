@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -48,7 +49,7 @@ struct BenchmarkStatistics {
 // Benchmark configuration
 constexpr int RUNS = 5;
 constexpr unsigned int SEED = 42;
-constexpr InputDistribution DISTRIBUTION = InputDistribution::Random;
+constexpr InputDistribution DISTRIBUTION = InputDistribution::Reversed;
 
 const std::vector<std::size_t> INPUT_SIZES = {
 	1000,
@@ -159,13 +160,45 @@ std::string createTimestampString() {
 }
 
 
-std::filesystem::path createResultFilePath() {
+std::string toFileNameToken(std::string text) {
+	for (char& ch : text) {
+		unsigned char value = static_cast<unsigned char>(ch);
+
+		if (std::isalnum(value))
+			ch = static_cast<char>(std::tolower(value));
+		else
+			ch = '_';
+	}
+
+	return text;
+}
+
+
+std::filesystem::path createResultFilePath(
+	const BenchmarkTarget& target,
+	InputDistribution distribution
+) {
 	const std::filesystem::path resultDirectory = "results";
 
-	std::filesystem::create_directories(resultDirectory);
+	std::filesystem::create_directories(
+		resultDirectory
+	);
+
+	std::string algorithmName =
+		toFileNameToken(target.name);
+
+	std::string distributionName =
+		toFileNameToken(
+			distributionToString(distribution)
+		);
 
 	return resultDirectory /
-		("benchmark_" + createTimestampString() + ".csv");
+		(
+			"benchmark_"
+			+ algorithmName + "_"
+			+ distributionName + "_"
+			+ createTimestampString() + ".csv"
+		);
 }
 
 
@@ -295,10 +328,8 @@ int main() {
 		std::cout << "Max: " << statistics.max << " ms\n\n";
 	}
 
-
 	std::filesystem::path resultFilePath =
-		createResultFilePath();
-
+		createResultFilePath(target, DISTRIBUTION);
 	saveResultsToCsv(results, resultFilePath);
 
 
