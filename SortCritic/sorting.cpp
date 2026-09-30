@@ -38,3 +38,59 @@ void sorting::selection(std::vector<int>& v) {
 		std::swap(v[i], v[minIndex]);
 	}
 }
+
+namespace {
+
+void mergeRange(
+	std::vector<int>& v,
+	std::vector<int>& temp,
+	std::size_t left,
+	std::size_t mid,
+	std::size_t right
+) {
+	std::size_t i = left;
+	std::size_t j = mid;
+	std::size_t k = left;
+
+	while (i < mid && j < right) {
+		if (v[i] <= v[j])
+			temp[k++] = v[i++];
+		else
+			temp[k++] = v[j++];
+	}
+
+	while (i < mid)
+		temp[k++] = v[i++];
+
+	while (j < right)
+		temp[k++] = v[j++];
+
+	for (std::size_t index = left; index < right; index++)
+		v[index] = temp[index];
+}
+
+
+void mergeSortImpl(
+	std::vector<int>& v,
+	std::vector<int>& temp,
+	std::size_t left,
+	std::size_t right
+) {
+	if (right - left <= 1)
+		return;
+
+	std::size_t mid = left + (right - left) / 2;
+
+	mergeSortImpl(v, temp, left, mid);
+	mergeSortImpl(v, temp, mid, right);
+
+	mergeRange(v, temp, left, mid, right);
+}
+
+}
+
+void sorting::merge(std::vector<int>& v) {
+	std::vector<int> temp(v.size());
+
+	mergeSortImpl(v, temp, 0, v.size());
+}
